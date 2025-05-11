@@ -91,20 +91,20 @@ def main():
     title = ''
     contents = [a for a in sys.argv][1:]
     for arg in sys.argv:
-        if 'row=' in arg.lower():
+        if '--row=' in arg.lower():
             try:
-                row = int(arg.lower().replace('row=', ''))
+                row = int(arg.lower().replace('--row=', ''))
                 contents.remove(arg)
             except:
                 print(arg + ' is not number.')
-        if 'scale=' in arg.lower():
+        if '--scale=' in arg.lower():
             try:
-                scale = int(arg.lower().replace('scale=', ''))
+                scale = int(arg.lower().replace('--scale=', ''))
                 contents.remove(arg)
             except:
                 print(arg + ' is not number.')
-        if 'title=' in arg.lower():
-            title = arg[len('title='):]
+        if '--title=' in arg.lower():
+            title = arg[len('--title='):]
             contents.remove(arg)
     create_qrcode(contents, title=title, qr_row=row, pixel_scale=scale)
 

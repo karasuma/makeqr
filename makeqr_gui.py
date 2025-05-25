@@ -6,11 +6,19 @@ import datetime, random, os, time, base64
 def container(page: ft.Page):
     qr_texts: List[List[str, str]] = []
     txtfield_col = ft.Column()
+    savefile = 'save.txt'
 
     def mkhash():
         unixtime = int(datetime.datetime.timestamp(datetime.datetime.now()))
         rnd1, rnd2 = random.random(), random.random()
         return f'{unixtime}-{rnd1}-{rnd2}'
+    
+    def init():
+        if os.path.exists(savefile):
+            with open(savefile, 'r') as f:
+                for line in f.readlines():
+                    qr_texts.append([mkhash(), line.strip()])
+    init()
 
     def add_text():
         qr_texts.append([mkhash(), ''])
@@ -25,7 +33,7 @@ def container(page: ft.Page):
             qr_texts.remove(item)
         update_textfields()
 
-    def append_textfield(id: str, v: str):
+    def append_textfield(idx: int, id: str, v: str):
         return ft.Row(
             [
                 ft.IconButton(
@@ -36,7 +44,7 @@ def container(page: ft.Page):
                     on_click=lambda e: remove_text(id),
                 ),
                 ft.TextField(
-                    label='QRifiy text...',
+                    label=f'No. {idx + 1}',
                     value=[v[1] for v in qr_texts if v[0] == id][0],
                     expand=True,
                     multiline=True,
@@ -48,15 +56,25 @@ def container(page: ft.Page):
 
     def update_textfields():
         txtfield_col.controls.clear()
-        txtfield_col.controls.extend([append_textfield(a[0], a[1]) for a in qr_texts])
+        txtfield_col.controls.extend([append_textfield(idx, a[0], a[1]) for idx, a in enumerate(qr_texts)])
         page.update()
+    
+    def save_texts():
+        try:
+            with open(savefile, 'w') as f:
+                f.write('\n'.join([r[1] for r in qr_texts]))
+            page.open(ft.SnackBar(ft.Text(f"{len(qr_texts)} text{'' if len(qr_texts) == 1 else 's'} Saved.")))
+        except Exception as e:
+            page.open(ft.SnackBar(ft.Text(f"Error: {str(e)}")))
+        finally:
+            page.update()
 
     # Initialize
     update_textfields()
     loading_overlay = ft.Container(
         content=ft.Column([ft.ProgressRing(), ft.Text('Generating...', size=20)],
-                          alignment=ft.MainAxisAlignment.CENTER,
-                          horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
         bgcolor=ft.Colors.BLACK54,
         alignment=ft.alignment.center,
         visible=False,
@@ -82,6 +100,14 @@ def container(page: ft.Page):
             'GENERATE QR CODES',
             on_click=lambda e: generate_qr()
     )
+    save_button = ft.OutlinedButton(
+        'SAVE STRINGS',
+        on_click=lambda e: save_texts()
+    )
+    button_controls = ft.Row([
+        gen_button,
+        save_button
+    ], expand=True, alignment=ft.MainAxisAlignment.CENTER)
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.add(
@@ -95,7 +121,7 @@ def container(page: ft.Page):
                     tooltip='Add new content',
                     on_click=lambda e: add_text()
                 ),
-                gen_button,
+                button_controls,
                 qr_col
             ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
